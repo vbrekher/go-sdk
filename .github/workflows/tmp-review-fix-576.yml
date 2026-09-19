@@ -22,7 +22,9 @@ jobs:
       - name: Focused telemetry tests
         run: go test ./openfeature/telemetry -count=1
       - name: OpenFeature package regression
-        run: go test ./openfeature/... -count=1
+        run: go test -tags testtools ./openfeature/... -count=1
+      - name: Full short regression
+        run: go test --short -tags testtools -timeout 2m ./... -count=1
       - name: Lint
         run: make lint
       - name: Commit verified source
