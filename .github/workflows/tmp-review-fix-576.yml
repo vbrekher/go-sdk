@@ -1,0 +1,37 @@
+name: Temporary PR 576 review validation
+on: [push]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Apply review fixes
+        run: |
+          python3 .github/tmp_review_fix_576.py
+          gofmt -w openfeature/telemetry/telemetry_test.go
+          test ! -e openfeature/telemetry/telemetry_context_id_test.go
+          git diff --check
+      - name: Focused telemetry tests
+        run: go test ./openfeature/telemetry -count=1
+      - name: OpenFeature package regression
+        run: go test ./openfeature/... -count=1
+      - name: Lint
+        run: make lint
+      - name: Commit verified source
+        shell: bash
+        run: |
+          git rm --ignore-unmatch .github/tmp_review_fix_576.py .github/workflows/tmp-review-fix-576.yml
+          git add -A openfeature/telemetry
+          git diff --cached --check
+          git config user.name 'Valentin'
+          git config user.email '6142607+vbrekher@users.noreply.github.com'
+          git commit -m 'test: align telemetry context ID coverage'
+          git push origin HEAD:review-fix/576-context-id-tests-20260919
